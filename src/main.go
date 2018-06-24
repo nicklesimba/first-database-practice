@@ -1,4 +1,4 @@
-//This is in its own branch just to test how to make a branch but yeah
+//A third branch just to make sure i really got it down :]
 
 package main
 
@@ -17,6 +17,14 @@ const (
 	dbname   = "calhounio_demo"
 )
 
+type User struct {
+	ID        int
+	Age       int
+	FirstName string
+	LastName  string
+	Email     string
+}
+
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -27,31 +35,35 @@ func main() {
 	}
 	defer db.Close()
 
-	//This will update Jake Baldino and
-	//also will spit out the ID and email of the mentioned row
+	//Returning Data (messing with querying for a single record)
 	sqlStatement := `
-	UPDATE users
-	SET first_name = $2, last_name = $3
-	WHERE id = $1
-	RETURNING id, email;
+	SELECT id, email FROM users WHERE id=$1;
 	`
 	var email string
 	var id int
-	err = db.QueryRow(sqlStatement, 3, "Fake", "Baldino").Scan(&id, &email)
-	if err != nil {
+	row := db.QueryRow(sqlStatement, 17)
+	switch err := row.Scan(&id, &email); err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned")
+	case nil:
+		fmt.Println("ID and email are:")
+		fmt.Println(id, email)
+	default:
 		panic(err)
 	}
-	fmt.Println("ID and email are:")
-	fmt.Println(id, email)
-
-	//Deleting Pappa's Yahoo account >:)
 	sqlStatement = `
-	DELETE FROM users
-	WHERE id = $1;
+	SELECT * FROM users WHERE id=$1
 	`
-	_, err = db.Exec(sqlStatement, 39)
-	if err != nil {
+	var user User
+	row = db.QueryRow(sqlStatement, 17)
+	err = row.Scan(&user.ID, &user.Age, &user.FirstName, &user.LastName, &user.Email)
+	switch err {
+	case sql.ErrNoRows:
+		fmt.Println("No rows were returned")
+	case nil:
+		fmt.Println("User's full data is:")
+		fmt.Println(user)
+	default:
 		panic(err)
 	}
-
 }
