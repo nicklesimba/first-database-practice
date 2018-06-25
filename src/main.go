@@ -35,35 +35,26 @@ func main() {
 	}
 	defer db.Close()
 
-	//Returning Data (messing with querying for a single record)
-	sqlStatement := `
-	SELECT id, email FROM users WHERE id=$1;
-	`
-	var email string
-	var id int
-	row := db.QueryRow(sqlStatement, 17)
-	switch err := row.Scan(&id, &email); err {
-	case sql.ErrNoRows:
-		fmt.Println("No rows were returned")
-	case nil:
-		fmt.Println("ID and email are:")
-		fmt.Println(id, email)
-	default:
+	//Returning Data (messing with querying for multiple records)
+	rows, err := db.Query("SELECT id, first_name FROM users LIMIT $1", 3)
+	if err != nil {
+		// handle this error better than this
 		panic(err)
 	}
-	sqlStatement = `
-	SELECT * FROM users WHERE id=$1
-	`
-	var user User
-	row = db.QueryRow(sqlStatement, 17)
-	err = row.Scan(&user.ID, &user.Age, &user.FirstName, &user.LastName, &user.Email)
-	switch err {
-	case sql.ErrNoRows:
-		fmt.Println("No rows were returned")
-	case nil:
-		fmt.Println("User's full data is:")
-		fmt.Println(user)
-	default:
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var firstName string
+		err = rows.Scan(&id, &firstName)
+		if err != nil {
+			// handle this error
+			panic(err)
+		}
+		fmt.Println(id, firstName)
+	}
+	// get any error encountered during iteration
+	err = rows.Err()
+	if err != nil {
 		panic(err)
 	}
 }
